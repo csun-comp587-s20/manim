@@ -7,6 +7,7 @@ import numpy as np
 
 from manimlib.constants import *
 from manimlib.mobject.mobject import Mobject
+import test.mobject_generator as mob_gen
 
 def __func__(mob):
     mob.name = "lambda"
@@ -15,7 +16,7 @@ def __dt_func__(mob, dt):
 def __x_func__(mob):
     mob.set_x(mob.get_x() + 1)
 
-class MObjectTest(unittest.TestCase):
+class MobjectTest(unittest.TestCase):
     def test_to_string(self):
         obj = Mobject()
         self.assertEqual(str(obj), "Mobject")
@@ -331,6 +332,27 @@ class MObjectTest(unittest.TestCase):
         np.testing.assert_array_equal(obj.points,
                 np.array([[x + a, y + b, z + c]]))
 
+    def test_shift_by_zero_property(self):
+        gen = mob_gen.MobjectGenerator(max_depth = 0)
+        obj = gen.next()
+        og = obj.points
+        obj.shift(np.zeros((1, 3)))
+        np.testing.assert_array_equal(og, obj.points)
+
+    def test_shift_negative_property(self):
+        gen = mob_gen.MobjectGenerator(max_depth=0)
+        obj = gen.next()
+        og = copy.deepcopy(obj)
+        obj.shift(np.full((1, 3), random.Random().randrange(-1000, -1)))
+        np.testing.assert_array_less(obj.get_all_points(), og.get_all_points())
+
+    def test_shift_positive_property(self):
+        gen = mob_gen.MobjectGenerator(max_depth=0)
+        obj = gen.next()
+        og = copy.deepcopy(obj)
+        obj.shift(np.full((1, 3), random.Random().randrange(1, 1000)))
+        np.testing.assert_array_less(og.get_all_points(), obj.get_all_points())
+
     def test_scale_returns_self(self):
         obj = Mobject()
         obj.points = np.array([0, 0, 0])
@@ -346,6 +368,15 @@ class MObjectTest(unittest.TestCase):
         obj.scale(s, about_point=np.array([0, 0, 0]))
         np.testing.assert_array_equal(obj.points,
                 np.array([[x * s, y * s, z * s]]))
+
+    def test_scale_property(self):
+        gen = mob_gen.MobjectGenerator(max_depth=0)
+        obj = gen.next()
+        og = copy.deepcopy(obj)
+        obj.scale(10)
+        np.testing.assert_array_less(
+                np.absolute(og.get_all_points()),
+                np.absolute(obj.get_all_points()))
 
     def test_rotate_returns_self(self):
         a = random.Random().randint(-1000, 1000)
@@ -417,6 +448,20 @@ class MObjectTest(unittest.TestCase):
         obj.points = np.array([[x, y, z]])
         obj.center()
         np.testing.assert_array_equal(obj.points, np.zeros((1, 3)))
+
+    def test_center_negative_bound_object(self):
+        gen = mob_gen.MobjectGenerator(upper_bound=-1)
+        obj = gen.next()
+        og = copy.deepcopy(obj)
+        obj.center()
+        np.testing.assert_array_less(og.get_all_points(), obj.get_all_points())
+
+    def test_center_positive_bound_object(self):
+        gen = mob_gen.MobjectGenerator(lower_bound=1)
+        obj = gen.next()
+        og = copy.deepcopy(obj)
+        obj.center()
+        np.testing.assert_array_less(obj.get_all_points(), og.get_all_points())
 
     def test_align_on_border_returns_self(self):
         obj = Mobject()
